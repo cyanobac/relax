@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+debug_ocr_*.png
+
+# Node / Vite
+node_modules/
+dist/
+
+# Env / secrets
+.env
+
+# OS
+.DS_Store
+Thumbs.db

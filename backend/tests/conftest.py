@@ -1,0 +1,30 @@
+"""Shared test fixtures and Tesseract setup."""
+import os
+from pathlib import Path
+
+import pytest
+
+from app.extractor.ocr_helpers import configure_tesseract
+
+# Tests exercise real OCR, so make sure pytesseract can find the binary
+# (PATH on CI/Linux, Program Files on Windows, or TESSERACT_CMD override).
+configure_tesseract(os.environ.get("TESSERACT_CMD"))
+
+FIXTURES = Path(__file__).parent / "fixtures"
+SAMPLE_DATE = "2026-02-10"
+
+
+@pytest.fixture
+def sample_png_bytes() -> bytes:
+    return (FIXTURES / f"stress_chart_{SAMPLE_DATE}.png").read_bytes()
+
+
+@pytest.fixture
+def golden_rows() -> list[tuple[str, str]]:
+    """Expected (timestamp, zone) rows from the daystar CLI golden CSV."""
+    lines = (FIXTURES / f"stress_zones_{SAMPLE_DATE}.csv").read_text().splitlines()
+    rows = []
+    for line in lines[1:]:  # skip header
+        ts, zone = line.split(",")
+        rows.append((ts, zone))
+    return rows

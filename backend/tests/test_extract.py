@@ -1,0 +1,103 @@
+"""Tests for the vendored extraction core and the /api/extract endpoint.
+
+The golden test pins the core's output to the daystar CLI's known-good result
+for the 2026-02-10 sample, so the vendored copy can't silently drift.
+"""
+import datetime
+from pathlib import Path
+
+import numpy as np
+import pytest
+from fastapi.testclient import TestClient
+
+from app.extractor.core import (
+    ExtractionError,
+    decode_image,
+    extract_from_array,
+    validate_dimensions,
+)
+from app.main import app
+
+MASK_PATH = str(Path(__file__).parents[1] / "app" / "extractor" / "mask_scaled.png")
+SAMPLE_DATE = datetime.date(2026, 2, 10)
+
+
+# ---- core ----------------------------------------------------------------
+
+def test_golden_matches_daystar_cli(sample_png_bytes, golden_rows):
+    img = decode_image(sample_png_bytes)
+    result = extract_from_array(img, MASK_PATH, SAMPLE_DATE)
+
+    got = [(p["timestamp"].replace("T", " "), p["zone"]) for p in result["points"]]
+    assert got == golden_rows
+
+
+def test_decode_rejects_garbage():
+    with pytest.raises(ExtractionError):
+        decode_image(b"not an image")
+
+
+def test_validate_dimensions_accepts_expected():
+    validate_dimensions(np.zeros((1136, 640, 3), np.uint8))  # should not raise
+
+
+def test_validate_dimensions_rejects_wrong_size():
+    with pytest.raises(ExtractionError):
+        validate_dimensions(np.zeros((800, 600, 3), np.uint8))
+
+
+# ---- API -----------------------------------------------------------------
+
+client = TestClient(app)
+
+
+def test_health():
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}
+
+
+def test_extract_endpoint_returns_points(sample_png_bytes, golden_rows):
+    r = client.post(
+        "/api/extract",
+        files={"file": ("chart.png", sample_png_bytes, "image/png")},
+        data={"date": "2026-02-10"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["points"]) == len(golden_rows)
+    assert body["meta"]["reference_date"] == "2026-02-10"
+    assert "annotated_png" not in body
+
+
+def test_extract_endpoint_includes_image_when_requested(sample_png_bytes):
+    r = client.post(
+        "/api/extract",
+        files={"file": ("chart.png", sample_png_bytes, "image/png")},
+        data={"date": "2026-02-10", "include_image": "true"},
+    )
+    assert r.status_code == 200
+    assert r.json()["annotated_png"]
+
+
+def test_extract_endpoint_rejects_bad_date(sample_png_bytes):
+    r = client.post(
+        "/api/extract",
+        files={"file": ("chart.png", sample_png_bytes, "image/png")},
+        data={"date": "10-02-2026"},
+    )
+    assert r.status_code == 422
+
+
+def test_extract_endpoint_rejects_wrong_size():
+    # A valid 1x1 PNG that fails the dimension check.
+    import cv2
+
+    ok, buf = cv2.imencode(".png", np.zeros((10, 10, 3), np.uint8))
+    assert ok
+    r = client.post(
+        "/api/extract",
+        files={"file": ("tiny.png", buf.tobytes(), "image/png")},
+        data={"date": "2026-02-10"},
+    )
+    assert r.status_code == 422

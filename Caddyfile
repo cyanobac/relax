@@ -1,0 +1,17 @@
+{$DOMAIN} {
+	# Personal health data on a public box — gate everything behind basic auth.
+	# Generate BASIC_AUTH_HASH with:  docker run caddy:2-alpine caddy hash-password --plaintext 'yourpass'
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	# API → FastAPI backend.
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Everything else → static frontend (nginx).
+	handle {
+		reverse_proxy frontend:80
+	}
+}
