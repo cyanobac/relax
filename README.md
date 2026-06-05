@@ -91,3 +91,7 @@ are exposed; the backend and frontend containers are internal.
 Returns `{ points, gaps, warnings, meta }` (plus `annotated_png` if requested).
 
 `GET /api/health` → `{ "status": "ok" }`
+
+## License
+
+MIT — see [LICENSE](LICENSE).
