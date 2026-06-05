@@ -1,0 +1,91 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+A web app that scrapes Oura's **Daytime Stress** screen out of a screenshot (Oura
+exposes no API for it) and returns `(timestamp, stress zone)` rows. FastAPI +
+OpenCV + Tesseract OCR backend, React/Vite frontend, Caddy for TLS/auth in prod.
+
+## Commands
+
+Backend (from `backend/`, needs Tesseract installed locally — or use Docker):
+
+```bash
+python -m venv .venv && .venv\Scripts\activate    # PowerShell/Windows
+pip install -r requirements.txt                   # runtime
+pip install -r requirements-dev.txt               # + pytest
+uvicorn app.main:app --reload --port 8000         # dev server
+pytest                                            # all tests
+pytest tests/test_extract.py::test_golden_matches_daystar_cli   # single test
+```
+
+Frontend (from `frontend/`, proxies `/api` → `127.0.0.1:8000`):
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # tsc -b && vite build
+```
+
+Docker (full stack, Caddy on :443 with a self-signed cert at https://localhost):
+
+```bash
+docker compose up --build
+```
+
+`pytest` runs **real OCR**, so Tesseract must be installed. `TESSERACT_CMD`
+overrides the binary path; otherwise `configure_tesseract()` auto-locates it
+(`C:\Program Files\Tesseract-OCR\tesseract.exe` on Windows, PATH elsewhere).
+
+## Architecture
+
+Request flow: `frontend/src/api.ts` POSTs multipart to `/api/extract` →
+`backend/app/routes.py` (decode, size-guard, HTTP error mapping) →
+`extractor/core.py::extract_from_array` orchestrates the pipeline using the three
+helper modules:
+
+- **`image_helpers.py`** — mask + crop the chart, `detect_dots` via
+  `cv2.HoughCircles`, `zone_for_y` (y-pixel → stress zone), `detect_gaps`.
+- **`ocr_helpers.py`** — `extract_times_from_chart` OCRs the left/right x-axis
+  time labels to anchor the chart's start/end, with Oura-specific edge-case
+  handling (late-night start ≥11 PM, two-midnight spans). `parse_time_string`
+  corrects common OCR misreads (`O`→`0`, `l`/`I`/`|`→`1`).
+- **`visualization_helpers.py`** — draws the annotated preview image.
+
+Each detected dot's x maps to a 15-minute timeslot → timestamp; its y maps to a
+zone. The user supplies the **reference date** via the form (the original daystar
+CLI derived it from the filename — this is the key decoupling point of the
+vendored core).
+
+## Non-obvious constraints
+
+- **Fixed 640×1136 resolution.** Every pixel constant (dot x-range, crop bounds,
+  OCR regions, the bundled `mask_scaled.png`) assumes an iPhone SE/8-class Oura
+  screenshot. `validate_dimensions()` *rejects* other sizes (±4px tolerance)
+  rather than silently producing wrong data. Re-tuning for another device means
+  changing constants in `core.py` and `image_helpers.py` plus regenerating the
+  mask.
+
+- **The extractor core is vendored from the larger *daystar* project.** The
+  golden test (`test_golden_matches_daystar_cli`) pins this copy's output to
+  daystar's known-good CSV for the 2026-02-10 fixture so the vendored copy can't
+  silently drift. If you change extraction logic, the golden fixtures in
+  `backend/tests/fixtures/` are the source of truth — don't edit them to make a
+  test pass without understanding why output changed.
+
+- **Two error classes by design.** `ExtractionError` (subclass of `ValueError`)
+  is for expected, user-facing problems (bad image, wrong size, no dots) and
+  maps to HTTP 422; anything else surfaces as 500. Keep that distinction when
+  adding failure modes.
+
+- **`debug_ocr` writes `debug_ocr_*.png` files to the current working
+  directory** — leave it off in the request path.
+
+## Prod deployment
+
+Caddy terminates TLS (auto Let's Encrypt), gates the site behind basic auth, and
+reverse-proxies `/api/*` to the backend; only Caddy publishes ports. Config via
+`.env` (`DOMAIN`, `BASIC_AUTH_USER`, `BASIC_AUTH_HASH` — generate the hash with
+`docker run caddy:2-alpine caddy hash-password --plaintext 'yourpass'`).
