@@ -76,14 +76,14 @@ docker compose up --build
 ## Deploy on Docker host
 
 1. Point a DNS A record at the server.
-2. `cp .env.example .env` and fill in `DOMAIN`, `BASIC_AUTH_USER`, `BASIC_AUTH_HASH`
-   (generate the hash with
-   `docker run caddy:2-alpine caddy hash-password --plaintext 'yourpass'`).
+2. `cp .env.example .env` and set `DOMAIN`.
 3. `docker compose up -d --build`
 
-Caddy terminates TLS (auto Let's Encrypt), gates the site behind basic auth, serves
-the static frontend, and reverse-proxies `/api/*` to the backend. Only ports 80/443
-are exposed; the backend and frontend containers are internal. Caddy also sets
+Caddy terminates TLS (auto Let's Encrypt), serves the static frontend, and
+reverse-proxies `/api/*` to the backend. The site is **public and
+unauthenticated** — abuse is handled by the per-IP rate limit, the in-flight
+cap, and Cloudflare (see below). Only ports 80/443 are exposed; the backend and
+frontend containers are internal. Caddy also sets
 security headers (HSTS, CSP, `nosniff`, frame denial), caps `/api` upload bodies at
 1 MB, and writes JSON access logs to stdout (`docker compose logs caddy`).
 

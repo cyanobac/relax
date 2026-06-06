@@ -27,10 +27,8 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      # Set these in a .env file next to this compose file (see .env.example).
+      # Set this in a .env file next to this compose file (see .env.example).
       DOMAIN: ${DOMAIN:-localhost}
-      BASIC_AUTH_USER: ${BASIC_AUTH_USER:-admin}
-      BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

@@ -85,7 +85,8 @@ vendored core).
 
 ## Prod deployment
 
-Caddy terminates TLS (auto Let's Encrypt), gates the site behind basic auth, and
-reverse-proxies `/api/*` to the backend; only Caddy publishes ports. Config via
-`.env` (`DOMAIN`, `BASIC_AUTH_USER`, `BASIC_AUTH_HASH` — generate the hash with
-`docker run caddy:2-alpine caddy hash-password --plaintext 'yourpass'`).
+Caddy terminates TLS (auto Let's Encrypt) and reverse-proxies `/api/*` to the
+backend; only Caddy publishes ports. The site is public and unauthenticated —
+abuse is handled by the per-IP rate limit (`ratelimit.py`), the in-flight
+concurrency cap (`routes.py`), and Cloudflare in front (see README). Config via
+`.env` (just `DOMAIN`).

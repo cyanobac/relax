@@ -14,11 +14,8 @@
 }
 
 {$DOMAIN} {
-	# Personal health data on a public box — gate everything behind basic auth.
-	# Generate BASIC_AUTH_HASH with:  docker run caddy:2-alpine caddy hash-password --plaintext 'yourpass'
-	basic_auth {
-		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
-	}
+	# Public, unauthenticated: anyone can try the tool. Abuse is handled by the
+	# per-IP rate limit, the in-flight cap, and Cloudflare in front — see README.
 
 	# Access log to stdout (captured by `docker compose logs caddy`) so abuse is
 	# visible and can feed fail2ban-style banning later.
