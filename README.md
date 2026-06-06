@@ -6,9 +6,16 @@ scrapes it off the app screen with OpenCV + Tesseract OCR.
 
 Upload a screenshot, pick the date, and get a table you can copy or download as CSV.
 
-> Extracted from the larger *daystar* project as a standalone, shareable repo.
+> Extracted from the larger (not yet released) *daystar* project as a standalone, shareable repo.
 > The extraction core (`backend/app/extractor/`) is vendored from daystar's
 > `extractor/` package.
+
+## Device Compatibility
+
+| Device | Resolution | Status |
+|--------|------------|--------|
+| iPhone SE (2020) | 640×1136 | Supported |
+| Others | — | Need screenshots |
 
 ## How it works
 
@@ -91,6 +98,26 @@ are exposed; the backend and frontend containers are internal.
 Returns `{ points, gaps, warnings, meta }` (plus `annotated_png` if requested).
 
 `GET /api/health` → `{ "status": "ok" }`
+
+### Limits & responses
+
+OCR is CPU-bound, so the endpoint runs it off the event loop in a worker thread
+and caps how much work is in flight at once:
+
+| status | when                                                           |
+| ------ | -------------------------------------------------------------- |
+| `200`  | success                                                        |
+| `413`  | upload larger than the size cap                                |
+| `422`  | bad date, undecodable image, wrong resolution, or no dots      |
+| `500`  | unexpected error (details are logged server-side, not returned)|
+| `503`  | server busy — too many extractions in flight (`Retry-After: 60`)|
+
+Two env vars tune the throttle (defaults in parentheses):
+
+| var                         | meaning                                  |
+| --------------------------- | ---------------------------------------- |
+| `MAX_CONCURRENT_EXTRACTIONS`| OCR jobs running at once (`2`)            |
+| `MAX_INFLIGHT_EXTRACTIONS`  | running + queued before `503` (`6`)       |
 
 ## License
 

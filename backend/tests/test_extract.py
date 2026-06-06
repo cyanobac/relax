@@ -101,3 +101,18 @@ def test_extract_endpoint_rejects_wrong_size():
         data={"date": "2026-02-10"},
     )
     assert r.status_code == 422
+
+
+def test_extract_endpoint_sheds_load_when_busy(sample_png_bytes, monkeypatch):
+    # With the in-flight count already at the limit, a new request is rejected
+    # fast (503 + Retry-After) before any OCR runs, rather than queueing.
+    from app import routes
+
+    monkeypatch.setattr(routes, "_inflight", routes._MAX_INFLIGHT)
+    r = client.post(
+        "/api/extract",
+        files={"file": ("chart.png", sample_png_bytes, "image/png")},
+        data={"date": "2026-02-10"},
+    )
+    assert r.status_code == 503
+    assert r.headers["Retry-After"] == "60"
