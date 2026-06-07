@@ -8,7 +8,7 @@ A small web app that turns a screenshot of Oura’s **Daytime Stress** screen in
 
 ## Try it out
 
-https://codeome.net
+https://relax.codeome.net
 
 ## Screenshots
 
