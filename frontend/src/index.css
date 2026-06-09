@@ -389,9 +389,10 @@ h1 {
 }
 
 /* ---- footer ---- */
-.site-footer { margin-top: 48px; text-align: center; }
+.site-footer { margin-top: 48px; text-align: left; }
 .site-footer a {
   color: var(--text-dim); font-size: 13px; text-decoration: none;
   border-bottom: 1px solid transparent; transition: color 0.15s, border-color 0.15s;
 }
 .site-footer a:hover { color: var(--text-mut); border-bottom-color: var(--border); }
+.site-footer .sep { color: var(--text-dim); font-size: 13px; margin: 0 8px; }

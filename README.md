@@ -1,10 +1,8 @@
 # Relax -- Oura Stress Data Extractor
 
-
 A small web app that turns a screenshot of Oura’s **Daytime Stress** screen into a table of `(timestamp, stress zone)` rows. Oura provides no API for this data, so the extractor reconstructs it directly from the screenshot using OpenCV and Tesseract OCR.
 
 > Extracted from the larger (unreleased) _daystar_ project as a standalone, shareable tool. The extraction core (`backend/app/extractor/`) is vendored from daystar’s `extractor/` package.
-
 
 ## Try it out
 
@@ -17,7 +15,7 @@ Drop in a Daytime Stress screenshot, set the date, and click **Extract**.
 ![Upload Panel](assets/screenshot-upload.png)
 
 ### Original + Annotated Views
-The extractor displays the original screenshot alongside an annotated version showing detected datapoints.
+The extractor displays the original screenshot alongside an annotated version showing detected data points.
 ![Original and Annotated Screenshots](assets/screenshot-phones.png)
 
 ### Results Table
@@ -55,8 +53,8 @@ This helps expand support to more devices.
 All the pixel geometry (dot x-range, crop bounds, OCR regions, the bundled mask)
 assumes a **640×1136** screenshot (Oura on an iPhone SE/8-class device). Uploads of
 other sizes are **rejected** rather than silently producing a wrong table. If you
-capture on a different device, the constants in
-`backend/app/extractor/core.py` and `image_helpers.py` need re-tuning.
+capture on a different device, the constants in `backend/app/extractor/core.py` 
+and `image_helpers.py` need re-tuning.
 
 ## Develop Locally
 
@@ -102,7 +100,7 @@ If Chrome keeps upgrading `http://localhost` to `https://localhost`, clear
 `localhost` site data or open a fresh profile/incognito window. Chrome can cache
 an HTTPS-only policy for `localhost` after earlier HTTPS testing.
 
-## Deploy on Docker Host
+## Deploy on Cloud Server
 
 1. Point a DNS A record at the server.
 2. `cp .env.example .env` and set `CADDY_SITE_ADDR` and `CADDY_TLS_SNIPPET`. Also
@@ -152,7 +150,7 @@ layer.
    Certificate** (Cloudflare dashboard → SSL/TLS → Origin Server) and set
    SSL/TLS mode to **Full (strict)**. The origin cert is valid for years, so
    there is no renewal burden.
-4. **Lock the origin to Cloudflare.** Restrict your Hetzner firewall so ports
+4. **Lock the origin to Cloudflare.** Restrict your Cloud Server firewall so ports
    80/443 only accept Cloudflare's IP ranges
    (<https://www.cloudflare.com/ips/>); otherwise bots can hit the origin IP
    directly and bypass Cloudflare. Those same ranges are listed as
@@ -253,10 +251,6 @@ container* (`/data/requests.db`), so run the dump there and copy the file out:
 docker compose exec backend python -m app.logdump --out /data/dump.csv
 docker compose cp backend:/data/dump.csv ./dump.csv
 ```
-
-(Running `python -m app.logdump` on the host instead reads the host default path
-`backend/app/requests.db`, a different file — that's the dev/local DB, not the
-container's.)
 
 ## License
 

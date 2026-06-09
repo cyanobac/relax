@@ -519,11 +519,15 @@ export function App() {
         </section>
       )}
 
-      {contactEmail && (
-        <footer className="site-footer">
-          <a href={`mailto:${contactEmail}`}>Contact</a>
-        </footer>
-      )}
+      <footer className="site-footer">
+        <a href="https://github.com/cyanobac/relax" target="_blank" rel="noopener noreferrer">Source</a>
+        {contactEmail && (
+          <>
+            <span className="sep" aria-hidden="true">·</span>
+            <a href={`mailto:${contactEmail}`}>Contact</a>
+          </>
+        )}
+      </footer>
     </div>
   );
 }

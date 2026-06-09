@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A web app that scrapes Oura's **Daytime Stress** screen out of a screenshot (Oura
+A web app that extracts Oura's **Daytime Stress** screen from of a screenshot (Oura
 exposes no API for it) and returns `(timestamp, stress zone)` rows. FastAPI +
 OpenCV + Tesseract OCR backend, React/Vite frontend, Caddy for TLS/auth in prod.
 
