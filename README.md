@@ -56,6 +56,12 @@ other sizes are **rejected** rather than silently producing a wrong table. If yo
 capture on a different device, the constants in `backend/app/extractor/core.py` 
 and `image_helpers.py` need re-tuning.
 
+## Documentation
+
+See [`docs/GOVERNANCE_INDEX.md`](docs/GOVERNANCE_INDEX.md) for the full
+[architecture](docs/ARCHITECTURE.md), [threat model](docs/THREAT_MODEL.md), and
+[hardening roadmap](docs/HARDENING_ROADMAP.md).
+
 ## Develop Locally
 
 **Backend** (needs Tesseract installed locally, or just use Docker):
